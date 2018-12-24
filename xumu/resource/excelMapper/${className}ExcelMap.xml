@@ -1,0 +1,37 @@
+<#assign className = table.className>
+<#assign classNameLower = className?uncap_first> 
+<?xml version="1.0" encoding="UTF-8"?>
+<sheetMapping name="BreedingCompany">
+	<sheetName>汉字sheet名</sheetName>
+	<className>${basepackage}.entity.${className}</className>
+	<titleRowIndex>0</titleRowIndex>
+	<dataStartIndex>1</dataStartIndex>
+	<properties>
+		<@generateFields/>
+	</properties>
+</sheetMapping>
+<#macro generateFields>
+	<#assign x=0 />
+	<#list table.columns as column>
+	<#if "id" != column.columnNameLower && "createBy" != column.columnNameLower && "createDate" != column.columnNameLower && "updateBy" != column.columnNameLower && "updateDate" != column.columnNameLower && "status" != column.columnNameLower && "version" != column.columnNameLower>
+		<property>
+			<name>${column.columnNameLower}</name>
+			<title>要修改标题</title>
+			<columnNum>${x}</columnNum>
+			<columnWidth>2000</columnWidth>
+		<#if "java.util.Date" = column.javaType>
+			<columnStyle>date</columnStyle>
+			<columnPattern>yyyy-MM-dd</columnPattern>
+		<#else>
+			<columnStyle>default</columnStyle>
+		</#if>
+			<validator>
+				<type></type>
+				<regex></regex>
+				<message></message>
+			</validator>
+		</property>
+	<#assign x=x+1 />
+	</#if>
+	</#list>
+</#macro>

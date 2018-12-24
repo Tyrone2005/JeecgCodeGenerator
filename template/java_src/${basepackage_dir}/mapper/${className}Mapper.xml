@@ -1,0 +1,98 @@
+<#include "/macro.include"/>
+<#assign className = table.className>
+<#assign classNameFirstLower =
+table.classNameFirstLower>   
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"
+"http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<#macro mapperEl value>${r"#{"}${value}}</#macro>
+<mapper namespace="${basepackage}.dao.mapper.${className}Mapper">
+    <!-- 查询结果映射 -->
+    <resultMap id="searchResultMap" type="${basepackage}.entity.${className}">
+        <#list table.columns as column>
+        <result property="${column.columnNameLower}" column="${column.sqlName}" />
+        </#list>
+    </resultMap>
+    <!-- 用于select查询公用抽取的列 -->
+    <sql id="columns">
+        <#list table.columns as column>${column.sqlName}<#if column_has_next>,</#if></#list>
+    </sql>
+    <!-- 新增记录 -->
+    <insert id="insert" parameterType="${basepackage}.entity.${className}">
+        INSERT INTO ${table.sqlName} (
+        <#list table.columns as column>
+            ${column.sqlName} <#if column_has_next>,</#if>
+        </#list>
+        ) VALUES (
+        <#list table.columns as column>
+        <@mapperEl column.columnNameFirstLower/> <#if column_has_next>,</#if>
+        </#list>
+        )
+    </insert>
+    <!-- 单记录删除 -->
+    <delete id="delete" parameterType="java.lang.String">
+        delete from ${table.sqlName} where id=<@mapperEl 'id'/>
+    </delete>
+    <!-- 批量记录删除 -->
+    <delete id="deleteByIds" parameterType="java.util.List">
+        delete from ${table.sqlName} where id in
+        <foreach collection="list" item="ids" open="(" separator="," close=")"><@mapperEl 'ids'/></foreach>
+    </delete>
+    <!-- 单记录更新 -->
+    <update id="update" parameterType="${basepackage}.entity.${className}">
+        UPDATE users
+        <trim prefix="set" suffixOverrides=",">
+            <#list table.notPkColumns as column>
+            <#if "createdBy" != column.columnNameLower && "createDate" != column.columnNameLower>
+            <if test="<@mapperEl column.columnNameFirstLower/> != null">
+                set ${column.sqlName} =<@mapperEl column.columnNameFirstLower/>,
+            </if>
+            </if>
+            </#list>
+        </trim>
+        where id=<@mapperEl 'id'/>
+    </update>
+    <!-- 查询记录BY ID -->
+    <select id="getById" resultMap="searchResultMap" parameterType="java.lang.String">
+        select
+        <include refid="columns" />
+        from
+        ${table.sqlName} where id=<@mapperEl 'id'/>
+    </select>
+    <!-- 查询所有记录 -->
+    <select id="getAll" resultMap="searchResultMap" parameterType="java.lang.String">
+        select
+        <include refid="columns" />
+        from
+        ${table.sqlName}
+    </select>
+
+    <!-- 动态查询条件 -->
+    <sql id="searchConditionSQL">
+        <trim prefix="where" prefixOverrides="AND |OR ">
+            <#list table.columns as column>
+            <if test="${column.columnNameFirstLower} != null">
+                and ${column.sqlName} = <@mapperEl column.columnNameFirstLower/>
+            </if>
+            </#list>
+        </trim>
+    </sql>
+    <select id="search" resultMap="searchResultMap" useCache="true" parameterType="${basepackage}.vo.searcher.${className}SearchCondition">
+        select
+        <include refid="columns" />
+        from ${table.sqlName}
+        <include refid="searchConditionSQL" />
+    </select>
+
+    <select id="selectPage" resultMap="searchResultMap" useCache="true" parameterType="${basepackage}.vo.searcher.${className}SearchCondition">
+        select
+        <include refid="columns" />
+        from ${table.sqlName}
+        <include refid="searchConditionSQL" />
+    </select>
+    <select id="selectPageCount" resultType="long" parameterType="${basepackage}.vo.searcher.${className}SearchCondition">
+        select count(id) from ${table.sqlName}
+        <include refid="searchConditionSQL" />
+    </select>
+</mapper>

@@ -1,0 +1,48 @@
+<#include "/macro.include"/>
+<#assign className = table.className>
+<#assign classNameFirstLower = table.classNameFirstLower>
+<?xml version="1.0" encoding="UTF-8"?>
+<#macro mapperEl value>${"'${"}${value}}'</#macro>
+<sql-statement namespace="base.${classNameFirstLower}">
+    <!-- 新增记录 -->
+    <sql id="insert">
+        INSERT INTO ${table.sqlName} (
+        <#list table.columns as column>
+            ${column.sqlName}<#if column_has_next>,</#if>
+        </#list>
+        ) VALUES (
+        <#list table.columns as column>
+            <@mapperEl column.columnNameFirstLower/><#if column_has_next>,</#if>
+        </#list>
+        )
+    </sql>
+    <!-- 更新记录 -->
+    <sql id="update">
+        UPDATE ${table.sqlName}
+        SET
+        <#list table.columns as column>
+            ${column.sqlName} = <@mapperEl column.columnNameFirstLower/><#if column_has_next>,</#if>
+        </#list>
+        WHERE 主键 = <@mapperEl '主键'/>
+    </sql>
+    <!-- 单记录删除 -->
+    <sql id="delete">
+        DELETE FROM ${table.sqlName} WHERE 主键 = <@mapperEl '主键'/>
+    </sql>
+    <!-- 通用查询结果 -->
+    <sql id="searchResult">
+        SELECT A.*
+    </sql>
+    <!-- 通用查询-->
+    <sql id="search">
+        FROM ${table.sqlName} A
+        WHERE 1=1
+        <![CDATA[
+            <#list table.columns as column>
+            <% if(!isEmpty(${column.columnNameFirstLower})){ %>
+                AND A.${column.sqlName} = <@mapperEl column.columnNameFirstLower/>
+            <% } %>
+            </#list>
+        ]]>
+    </sql>
+</sql-statement>
